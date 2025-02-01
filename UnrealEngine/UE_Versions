@@ -1,0 +1,43 @@
+#!/usr/bin/bash
+# Reports the engine versions for projects in user directories.
+# Within categories, projects are sorted by engine version, since
+# this script was originally created to locate projects needing
+# to be upgraded before an older engine could be uninstalled.
+#
+# LICENSE: GNU/Affero General Public License 3.0
+
+# Base under which user home directories exist
+HOME_ROOT="/home"
+
+# Space-separated list of subdirectories within user homes
+# where they put their UE projects. This prevents the need
+# to search entire home directories.
+UE_PROJECT_SUBDIRS="Projects/Unreal"
+
+for USER in $(ls "${HOME_ROOT}")
+do
+	for SUBDIR in ${UE_PROJECT_SUBDIRS}
+	do
+		PROJECT_DIR="${HOME_ROOT}/${USER}/${SUBDIR}"
+		if test -d "${PROJECT_DIR}"
+		then
+			HEADER=$(printf "User: ${USER}\nDirectory: ${PROJECT_DIR}")
+			# The "sed" command that feeds this loop removes unwanted punctuation.
+			# It also removes carriage returns (\r) that may be found in the grep
+			# results due to the JSON .uproject file being imported from Windows.
+			while read UPROJECT CONSTANT VERSION
+			do
+				if [[ "${HEADER}" != "" ]]
+				then
+					printf "\n${HEADER}\n\n"
+					# HEADER only for the first one
+					HEADER=""
+				fi
+				printf "\t%8s\t%-70s\n" "${VERSION}" "${UPROJECT}"
+			done \
+				< <(cd "${PROJECT_DIR}" && grep "EngineAssociation" $(find . -mindepth 1 -maxdepth 2 -name '*.uproject' -printf "%p\n") | sed -e 's/\r//g; s/[":,]//g; s/^\.\///' | sort -k3 -n)
+		fi
+	done
+done
+
+
