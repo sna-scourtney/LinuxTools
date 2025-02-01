@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 # Convenient script to manually build plugin for UE project or engine version.
 #
